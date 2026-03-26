@@ -13,59 +13,79 @@ public class BenchmarkResults {
 
     public static void main(String[] args) {
 
-        int[] patternSizes = {5, 20, 50, 100, 500};
-        int[] textSizes = {10000, 100000, 1000000}; // small, medium, large
-        int repetitions = 3; // repeat each test
+        // Define test parameters
+        int[] patternSizes = {5, 20, 50, 100, 500}; // different pattern lengths
+        int[] textSizes = {10000, 100000, 1000000}; // small, medium, large texts
+        int repetitions = 3; // repeat each test 3 times for consistency
+        String[] dataTypes = {"English", "DNA"}; // types of text data
 
-        String[] dataTypes = {"English", "DNA"};
+        // File names for CSV output
+        String csvAll = "results.csv";              // all algorithms together
+        String csvKMP = "results_KMP.csv";         // only KMP results
+        String csvRK = "results_RabinKarp.csv";    // only Rabin-Karp results
+        String csvBM = "results_BoyerMoore.csv";   // only Boyer-Moore results
 
-        String csvFile = "results.csv";
+        //  automatically closes writers
+        try (
+                BufferedWriter writerAll = new BufferedWriter(new FileWriter(csvAll));
+                BufferedWriter writerKMP = new BufferedWriter(new FileWriter(csvKMP));
+                BufferedWriter writerRK = new BufferedWriter(new FileWriter(csvRK));
+                BufferedWriter writerBM = new BufferedWriter(new FileWriter(csvBM));
+        ) {
+            //  Write headers to all CSV files
+            String header = "Algorithm,TextSize,PatternSize,DataType,Comparisons,Time(ns)";
+            writerAll.write(header); writerAll.newLine();
+            writerKMP.write(header); writerKMP.newLine();
+            writerRK.write(header); writerRK.newLine();
+            writerBM.write(header); writerBM.newLine();
 
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(csvFile))) {
-
-            // Header
-            writer.write("Algorithm,TextSize,PatternSize,DataType,Comparisons,Time(ns)");
-            writer.newLine();
-
+            // Loop through all combinations of data type, text size, pattern size
             for (String dataType : dataTypes) {
                 for (int textSize : textSizes) {
-                    // Generate text
+
+                    // Generate the text based on data type
                     String text;
                     if (dataType.equals("English")) {
                         text = DataGenerator.generateEnglishText(textSize);
                     } else {
                         text = DataGenerator.generateDNASequence(textSize);
                     }
-
+                    //  Loop through different pattern sizes
                     for (int patternSize : patternSizes) {
                         for (int rep = 0; rep < repetitions; rep++) {
+
+                            //  Generate a pattern from the text
                             String pattern = DataGenerator.generatePatternFromText(text, patternSize);
 
-                            // KMP
+                            //  KMP Algorithm
                             KMP.Result kmpResult = KMP.search(text, pattern);
-                            writer.write("KMP," + textSize + "," + patternSize + "," + dataType + ","
-                                    + kmpResult.comparisons + "," + kmpResult.timeNs);
-                            writer.newLine();
+                            String lineKMP = "KMP," + textSize + "," + patternSize + "," + dataType + ","
+                                    + kmpResult.comparisons + "," + kmpResult.timeNs;
+                            writerAll.write(lineKMP); writerAll.newLine(); // unified CSV
+                            writerKMP.write(lineKMP); writerKMP.newLine(); // KMP-only CSV
 
-                            // Rabin-Karp
+                            //  Rabin-Karp Algorithm
                             RabinKarp.Result rkResult = RabinKarp.search(text, pattern);
-                            writer.write("RabinKarp," + textSize + "," + patternSize + "," + dataType + ","
-                                    + rkResult.comparisons + "," + rkResult.timeNs);
-                            writer.newLine();
+                            String lineRK = "RabinKarp," + textSize + "," + patternSize + "," + dataType + ","
+                                    + rkResult.comparisons + "," + rkResult.timeNs;
+                            writerAll.write(lineRK); writerAll.newLine(); // unified CSV
+                            writerRK.write(lineRK); writerRK.newLine();   // Rabin-Karp-only CSV
 
-                            // Boyer-Moore
+                            //  Boyer-Moore Algorithm
                             BoyerMoore.Result bmResult = BoyerMoore.search(text, pattern);
-                            writer.write("BoyerMoore," + textSize + "," + patternSize + "," + dataType + ","
-                                    + bmResult.comparisons + "," + bmResult.timeNs);
-                            writer.newLine();
+                            String lineBM = "BoyerMoore," + textSize + "," + patternSize + "," + dataType + ","
+                                    + bmResult.comparisons + "," + bmResult.timeNs;
+                            writerAll.write(lineBM); writerAll.newLine(); // unified CSV
+                            writerBM.write(lineBM); writerBM.newLine();   // Boyer-Moore-only CSV
                         }
                     }
                 }
             }
 
-            System.out.println("Benchmark complete. Results saved in " + csvFile);
+            System.out.println("Benchmark complete. Results saved in all CSV files.");
 
         } catch (IOException e) {
+            // Catch exceptions if file cannot be written
             e.printStackTrace();
         }
     }
